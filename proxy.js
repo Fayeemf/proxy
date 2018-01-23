@@ -33,14 +33,30 @@ module.exports = setup;
  * HTTP proxy.
  *
  * @param {http.Server|https.Server} server
- * @param {Object} options
+ * @param {Function} middleware
  * @api public
  */
 
-function setup (server, options) {
+function setup (server, middleware) {
   if (!server) server = http.createServer();
-  server.on('request', onrequest);
-  server.on('connect', onconnect);
+  server.on('request', function(req, res) {
+    if (middleware) {
+      middleware(req, res, function() {
+        onrequest(req, res);
+      });
+    } else {
+      onrequest(req, res);
+    }
+  });
+  server.on('connect', function(req, res) {
+    if (middleware) {
+      middleware(req, res, function () {
+        onconnect(req, res);
+      });
+    } else {
+      onconnect(req, res);
+    }
+  });
   return server;
 }
 
